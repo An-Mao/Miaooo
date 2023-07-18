@@ -2,18 +2,15 @@ package anmao.idoll.miaooo.Event;
 
 import anmao.idoll.miaooo.ApiFcn.GetS;
 import anmao.idoll.miaooo.ApiFcn.IsS;
+import anmao.idoll.miaooo.ApiFcn.SetS;
+import anmao.idoll.miaooo.Dat.Dat_;
 import anmao.idoll.miaooo.Miaooo;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.ai.attributes.Attribute;
-import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraftforge.event.entity.EntityJoinLevelEvent;
@@ -40,8 +37,8 @@ public class Miaooo_Events {
             if (event.getEntity() instanceof Monster monster)
             {
                 // remove all son
-                if (monster.getTags().contains("MiaoooFather")) {
-                    List<Entity> sons = GetS.GetEntityRadiusEntitiesWithTags(monster, 20, "MiaoooSon");
+                if (monster.getTags().contains(Dat_.Tags_MonsterFather)) {
+                    List<Entity> sons = GetS.GetEntityRadiusEntitiesWithTag(monster, 20, Dat_.Tags_MonsterSon);
                     for (Entity son:sons){
                         son.remove(Entity.RemovalReason.DISCARDED);
                     }
@@ -54,7 +51,6 @@ public class Miaooo_Events {
                     for (Entity i : entities) {
                         if (i instanceof LivingEntity living) {
                             living.heal(heal_health);
-                            //System.out.println("[" + living.getType() + "]" + living.getHealth());
                         }
                     }
                 }
@@ -63,8 +59,8 @@ public class Miaooo_Events {
         @SubscribeEvent
         public static void onJoinLevel(EntityJoinLevelEvent event){
             if (event.getEntity() instanceof Mob mob){
-                if(!mob.getTags().contains("MiaoooDropChance")) {
-                    mob.addTag("MiaoooDropChance");
+                if(!mob.getTags().contains(Dat_.Tags_ChanceDrop)) {
+                    mob.addTag(Dat_.Tags_ChanceDrop);
                     mob.setDropChance(EquipmentSlot.CHEST, 0.0f);
                     mob.setDropChance(EquipmentSlot.FEET, 0.0f);
                     mob.setDropChance(EquipmentSlot.HEAD, 0.0f);
@@ -80,21 +76,19 @@ public class Miaooo_Events {
                     List<Entity> entities = GetS.GetEntityRadiusEntities(monster, 10);
                     if (entities.size() > 1) {
                         float health = monster.getMaxHealth();
-                        double atk = monster.getAttribute(Attributes.ATTACK_DAMAGE).getValue();
+                        double atk = GetS.GetEntityAttribute(monster,Attributes.ATTACK_DAMAGE);
                         for (Entity i : entities) {
                             if (i instanceof LivingEntity living) {
                                 health = health + living.getMaxHealth();
-                                atk = atk + living.getAttribute(Attributes.ATTACK_DAMAGE).getValue();
-                                //living.remove(Entity.RemovalReason.DISCARDED);
-                                living.addTag("MiaoooSon");
+                                atk = atk + GetS.GetEntityAttribute(living, Attributes.ATTACK_DAMAGE);
+                                living.addTag(Dat_.Tags_MonsterSon);
                             }
                         }
-                        monster.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 999999, entities.size()));
-                        monster.addEffect(new MobEffectInstance(MobEffects.GLOWING, 999999, entities.size()));
-                        monster.getAttribute(Attributes.MAX_HEALTH).addPermanentModifier(new AttributeModifier("MaxHealth",health, AttributeModifier.Operation.ADDITION));
-                        monster.getAttribute(Attributes.ATTACK_DAMAGE).addPermanentModifier(new AttributeModifier("AttackDamage",atk, AttributeModifier.Operation.ADDITION));
-                        monster.setSpeed(monster.getSpeed()*entities.size() );
-                        monster.addTag("MiaoooFather");
+                        SetS.SetMonsterEffect(monster,MobEffects.DAMAGE_BOOST,999999,entities.size());
+                        SetS.SetMonsterEffect(monster,MobEffects.GLOWING,999999,entities.size());
+                        SetS.SetMonsterMaxHealth(monster,health);
+                        SetS.SetMonsterMaxAttackDamage(monster,atk);
+                        monster.addTag(Dat_.Tags_MonsterFather);
                         monster.heal(health);
                     }
                 }
@@ -104,8 +98,8 @@ public class Miaooo_Events {
         public static void onHurt(LivingHurtEvent event){
             //Safe Son
             if (event.getEntity() instanceof Monster monster){
-                if (monster.getTags().contains("MiaoooSon")){
-                    List<Entity> fathers = GetS.GetEntityRadiusEntitiesWithTags(monster,20,"MiaoooFather");
+                if (monster.getTags().contains(Dat_.Tags_MonsterSon)){
+                    List<Entity> fathers = GetS.GetEntityRadiusEntitiesWithTag(monster,20,Dat_.Tags_MonsterFather);
                     if (fathers.size()>0) {
                         event.setCanceled(true);
                         return;
@@ -122,20 +116,20 @@ public class Miaooo_Events {
                 damage = mob.getMaxHealth() * damage;
                 if (event.getAmount() > damage) {
                     event.setAmount(damage);
-                    mob.addTag("MiaoooDamageSafe");
+                    mob.addTag(Dat_.Tags_DamageSafe);
                 }
             }
 
         }
         @SubscribeEvent
         public static void onAttack(LivingAttackEvent event) {
-            if (event.getEntity().getTags().contains("MiaoooDamageSafe")){
+            if (event.getEntity().getTags().contains(Dat_.Tags_DamageSafe)){
                 int _tick = event.getEntity().tickCount - event.getEntity().getLastHurtByMobTimestamp();
                 if ( _tick > 0 && _tick < 20){
                     event.setCanceled(true);
                     return;
                 }
-                event.getEntity().removeTag("MiaoooDamageSafe");
+                event.getEntity().removeTag(Dat_.Tags_DamageSafe);
             }
             if (event.getEntity() instanceof Mob mob) {
                 Entity source = event.getSource().getEntity();

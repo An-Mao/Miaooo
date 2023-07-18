@@ -1,5 +1,6 @@
 package anmao.idoll.miaooo;
 
+import anmao.idoll.miaooo.Dat.Dat_;
 import com.mojang.logging.LogUtils;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
@@ -21,6 +22,8 @@ public class Miaooo
     public static final String MOD_ID = "miaooo";
     // Directly reference a slf4j logger
     private static final Logger LOGGER = LogUtils.getLogger();
+
+    //public static final Dat_ DAT = new Dat_();
     public Miaooo()
     {
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
@@ -31,6 +34,8 @@ public class Miaooo
         // Register ourselves for server and other game events we are interested in
         MinecraftForge.EVENT_BUS.register(this);
     }
+
+
 
     private void commonSetup(final FMLCommonSetupEvent event)
     {
