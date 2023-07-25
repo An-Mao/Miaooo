@@ -1,13 +1,15 @@
 package anmao.idoll.miaooo;
 
-import anmao.idoll.miaooo.Dat.Dat_;
+import anmao.idoll.miaooo.Config.Configs;
 import com.mojang.logging.LogUtils;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
@@ -31,6 +33,7 @@ public class Miaooo
         // Register the commonSetup method for modloading
         modEventBus.addListener(this::commonSetup);
 
+        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON,Configs.GENERAL_SPEC,"miaooo.toml");
         // Register ourselves for server and other game events we are interested in
         MinecraftForge.EVENT_BUS.register(this);
     }

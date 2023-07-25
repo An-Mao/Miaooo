@@ -5,4 +5,9 @@ public class IsS {
         int rn = GetS.GetRandomNumber(0,1000);
         return  rn <= p;
     }
+
+    public static boolean IsSpawnSkillMonster(int p){
+        int rn = GetS.GetRandomNumber(0,1000);
+        return  rn <= p;
+    }
 }

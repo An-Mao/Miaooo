@@ -3,8 +3,10 @@ package anmao.idoll.miaooo.Event;
 import anmao.idoll.miaooo.ApiFcn.GetS;
 import anmao.idoll.miaooo.ApiFcn.IsS;
 import anmao.idoll.miaooo.ApiFcn.SetS;
+import anmao.idoll.miaooo.Config.Configs;
 import anmao.idoll.miaooo.Dat.Dat_;
 import anmao.idoll.miaooo.Miaooo;
+import anmao.idoll.miaooo.Skill.MiaoooSkill;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
@@ -58,6 +60,10 @@ public class Miaooo_Events {
         }
         @SubscribeEvent
         public static void onJoinLevel(EntityJoinLevelEvent event){
+            //------------------------------------------------
+
+
+            //------------------------------------------------
             if (event.getEntity() instanceof Mob mob){
                 if(!mob.getTags().contains(Dat_.Tags_ChanceDrop)) {
                     mob.addTag(Dat_.Tags_ChanceDrop);
@@ -72,7 +78,15 @@ public class Miaooo_Events {
 
             //add father spawn
             if (event.getEntity() instanceof Monster monster){
-                if (IsS.IsSpawnBigMonster(100)) {
+                if (IsS.IsSpawnSkillMonster(10)){
+                    if (!MiaoooSkill.isSkillMonster(monster)){
+                        MiaoooSkill.setSkill(monster);
+                    }
+                }
+
+
+
+                if (IsS.IsSpawnBigMonster(50)) {
                     List<Entity> entities = GetS.GetEntityRadiusEntities(monster, 10);
                     if (entities.size() > 1) {
                         float health = monster.getMaxHealth();
@@ -98,25 +112,30 @@ public class Miaooo_Events {
         public static void onHurt(LivingHurtEvent event){
             //Safe Son
             if (event.getEntity() instanceof Monster monster){
-                if (monster.getTags().contains(Dat_.Tags_MonsterSon)){
-                    List<Entity> fathers = GetS.GetEntityRadiusEntitiesWithTag(monster,20,Dat_.Tags_MonsterFather);
-                    if (fathers.size()>0) {
-                        event.setCanceled(true);
-                        return;
+                if (!monster.getTags().contains(Dat_.Tags_MonsterFather)) {
+                    if (monster.getTags().contains(Dat_.Tags_MonsterSon)) {
+                        List<Entity> fathers = GetS.GetEntityRadiusEntitiesWithTag(monster, 20, Dat_.Tags_MonsterFather);
+
+                        if (fathers.size() > 0) {
+                            event.setCanceled(true);
+                            return;
+                        }
                     }
                 }
             }
             //
             if (event.getEntity() instanceof Mob mob) {
                 //
-                float damage = 0.2f;
-                if (event.getSource() == DamageSource.OUT_OF_WORLD) {
-                    damage = 0.5f;
-                }
-                damage = mob.getMaxHealth() * damage;
-                if (event.getAmount() > damage) {
-                    event.setAmount(damage);
-                    mob.addTag(Dat_.Tags_DamageSafe);
+                if (event.getAmount() > Configs.Config_MinDamage.get()) {
+                    double damage = Configs.Config_MaxDamageWithHealth.get();
+                    if (event.getSource() == DamageSource.OUT_OF_WORLD) {
+                        damage = Configs.Config_MaxDamageWithHealth.get();
+                    }
+                    damage = mob.getMaxHealth() * damage;
+                    if (event.getAmount() > damage) {
+                        event.setAmount((float) damage);
+                        mob.addTag(Dat_.Tags_DamageSafe);
+                    }
                 }
             }
 
@@ -134,9 +153,9 @@ public class Miaooo_Events {
             if (event.getEntity() instanceof Mob mob) {
                 Entity source = event.getSource().getEntity();
                 if (source != null) {
-                    float AAR = 9.0F;
+                    int AAR = Configs.Config_DamageRadius.get();
                     if (source != event.getSource().getDirectEntity()) {
-                        AAR = 256.0F;
+                        AAR =  Configs.Config_DamageRadiusO.get();
                     }
                     double x = source.getX() - mob.getX();
                     double y = source.getY() - mob.getY();
