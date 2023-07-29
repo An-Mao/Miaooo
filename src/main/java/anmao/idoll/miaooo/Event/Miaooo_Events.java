@@ -42,16 +42,16 @@ public class Miaooo_Events {
             {
                 // remove all son
                 if (monster.getTags().contains(Dat_.Tags_MonsterFather)) {
-                    List<Entity> sons = GetS.GetEntityRadiusEntitiesWithTag(monster, 20, Dat_.Tags_MonsterSon);
+                    List<Entity> sons = GetS.GetEntityRadiusEntitiesWithTag(monster, Configs.Config_MonsterSonRadius.get(), Dat_.Tags_MonsterSon);
                     for (Entity son:sons){
                         son.remove(Entity.RemovalReason.DISCARDED);
                     }
                 }
 
                 //heal monster
-                List<Entity> entities = GetS.GetEntityRadiusEntities(monster, 6);
+                List<Entity> entities = GetS.GetEntityRadiusEntities(monster, Configs.Config_HealRadius.get());
                 if (entities.size() > 1) {
-                    float heal_health = monster.getMaxHealth() * 0.1f;
+                    float heal_health = (float) (monster.getMaxHealth() * Configs.Config_HealScale.get());
                     for (Entity i : entities) {
                         if (i instanceof LivingEntity living) {
                             living.heal(heal_health);
@@ -145,7 +145,7 @@ public class Miaooo_Events {
                 //monster safe
                 if (mob.getTags().contains(Dat_.Tags_DamageSafe)){
                     int _tick = mob.tickCount - mob.getLastHurtByMobTimestamp();
-                    if ( _tick > 0 && _tick < 20){
+                    if ( _tick > 0 && _tick < Configs.Config_SafeTime.get()){
                         event.setCanceled(true);
                         return;
                     }
@@ -159,7 +159,7 @@ public class Miaooo_Events {
                     if (items.hasNext()){
                         oitem = items.next();
                     }
-                    System.out.println(oitem);
+                    //System.out.println(oitem);
                     int AAR;
                     if (source != event.getSource().getDirectEntity()) {
                         AAR = Configs.Config_DamageRadiusO.get();

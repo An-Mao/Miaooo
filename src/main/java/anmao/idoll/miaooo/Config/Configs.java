@@ -22,6 +22,9 @@ public class Configs {
     public static ForgeConfigSpec.IntValue Config_MonsterFatherRadius;
     public static ForgeConfigSpec.IntValue Config_MonsterSonRadius;
     public static ForgeConfigSpec.DoubleValue Config_MonsterSonDamageScale;
+    public static ForgeConfigSpec.IntValue Config_HealRadius;
+    public static ForgeConfigSpec.DoubleValue Config_HealScale;
+    public static ForgeConfigSpec.IntValue Config_SafeTime;
 
 
     private static void setupConfig(ForgeConfigSpec.Builder builder) {
@@ -37,5 +40,8 @@ public class Configs {
         Config_MonsterFatherRadius = builder.defineInRange("MonsterFatherRadius", 10, 0, 1000);
         Config_MonsterSonRadius = builder.defineInRange("MonsterSonRadius", 20, 0, 1000);
         Config_MonsterSonDamageScale = builder.defineInRange("MonsterSonDamageScale", 0.0, 0.0, 1.0);
+        Config_HealRadius = builder.defineInRange("HealRadius", 6, 0, 1000);
+        Config_HealScale = builder.defineInRange("HealScale", 0.1, 0.0, 1.0);
+        Config_SafeTime = builder.defineInRange("SafeTimeTick", 20, 0, 10000000);
     }
 }
