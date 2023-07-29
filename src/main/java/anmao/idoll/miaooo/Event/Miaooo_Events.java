@@ -6,7 +6,6 @@ import anmao.idoll.miaooo.ApiFcn.SetS;
 import anmao.idoll.miaooo.Config.Configs;
 import anmao.idoll.miaooo.Dat.Dat_;
 import anmao.idoll.miaooo.Miaooo;
-import anmao.idoll.miaooo.Skill.MiaoooSkill;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
@@ -15,6 +14,8 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraftforge.event.entity.EntityJoinLevelEvent;
 import net.minecraftforge.event.entity.living.LivingAttackEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
@@ -23,6 +24,7 @@ import net.minecraftforge.event.entity.living.LivingSpawnEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
+import java.util.Iterator;
 import java.util.List;
 
 public class Miaooo_Events {
@@ -66,28 +68,24 @@ public class Miaooo_Events {
             //------------------------------------------------
             if (event.getEntity() instanceof Mob mob){
                 if(!mob.getTags().contains(Dat_.Tags_ChanceDrop)) {
-                    mob.addTag(Dat_.Tags_ChanceDrop);
-                    mob.setDropChance(EquipmentSlot.CHEST, 0.0f);
-                    mob.setDropChance(EquipmentSlot.FEET, 0.0f);
-                    mob.setDropChance(EquipmentSlot.HEAD, 0.0f);
-                    mob.setDropChance(EquipmentSlot.LEGS, 0.0f);
-                    mob.setDropChance(EquipmentSlot.MAINHAND, 0.0f);
-                    mob.setDropChance(EquipmentSlot.OFFHAND, 0.0f);
+                    float a = Configs.Config_BanItemDrop.get().floatValue();
+                    if( a >= 0.0f) {
+                        mob.addTag(Dat_.Tags_ChanceDrop);
+                        mob.setDropChance(EquipmentSlot.CHEST, a);
+                        mob.setDropChance(EquipmentSlot.FEET, a);
+                        mob.setDropChance(EquipmentSlot.HEAD, a);
+                        mob.setDropChance(EquipmentSlot.LEGS, a);
+                        mob.setDropChance(EquipmentSlot.MAINHAND, a);
+                        mob.setDropChance(EquipmentSlot.OFFHAND, a);
+                    }
                 }
             }
 
             //add father spawn
             if (event.getEntity() instanceof Monster monster){
-                if (IsS.IsSpawnSkillMonster(10)){
-                    if (!MiaoooSkill.isSkillMonster(monster)){
-                        MiaoooSkill.setSkill(monster);
-                    }
-                }
 
-
-
-                if (IsS.IsSpawnBigMonster(50)) {
-                    List<Entity> entities = GetS.GetEntityRadiusEntities(monster, 10);
+                if (IsS.IsSpawnBigMonster()) {
+                    List<Entity> entities = GetS.GetEntityRadiusEntities(monster, Configs.Config_MonsterFatherRadius.get());
                     if (entities.size() > 1) {
                         float health = monster.getMaxHealth();
                         double atk = GetS.GetEntityAttribute(monster,Attributes.ATTACK_DAMAGE);
@@ -114,10 +112,10 @@ public class Miaooo_Events {
             if (event.getEntity() instanceof Monster monster){
                 if (!monster.getTags().contains(Dat_.Tags_MonsterFather)) {
                     if (monster.getTags().contains(Dat_.Tags_MonsterSon)) {
-                        List<Entity> fathers = GetS.GetEntityRadiusEntitiesWithTag(monster, 20, Dat_.Tags_MonsterFather);
-
-                        if (fathers.size() > 0) {
-                            event.setCanceled(true);
+                        List<Entity> fathers = GetS.GetEntityRadiusEntitiesWithTag(monster, Configs.Config_MonsterSonRadius.get(), Dat_.Tags_MonsterFather);
+                        if (!fathers.isEmpty()) {
+                            event.setAmount((float) (event.getAmount() * Configs.Config_MonsterSonDamageScale.get()));
+                            //event.setCanceled(true);
                             return;
                         }
                     }
@@ -142,20 +140,39 @@ public class Miaooo_Events {
         }
         @SubscribeEvent
         public static void onAttack(LivingAttackEvent event) {
-            if (event.getEntity().getTags().contains(Dat_.Tags_DamageSafe)){
-                int _tick = event.getEntity().tickCount - event.getEntity().getLastHurtByMobTimestamp();
-                if ( _tick > 0 && _tick < 20){
-                    event.setCanceled(true);
-                    return;
-                }
-                event.getEntity().removeTag(Dat_.Tags_DamageSafe);
-            }
+            //monster safe
             if (event.getEntity() instanceof Mob mob) {
+                //monster safe
+                if (mob.getTags().contains(Dat_.Tags_DamageSafe)){
+                    int _tick = mob.tickCount - mob.getLastHurtByMobTimestamp();
+                    if ( _tick > 0 && _tick < 20){
+                        event.setCanceled(true);
+                        return;
+                    }
+                    mob.removeTag(Dat_.Tags_DamageSafe);
+                }
+                //atk radius
                 Entity source = event.getSource().getEntity();
                 if (source != null) {
-                    int AAR = Configs.Config_DamageRadius.get();
+                    Iterator<ItemStack> items = event.getSource().getEntity().getHandSlots().iterator();
+                    ItemStack oitem = items.next();
+                    if (items.hasNext()){
+                        oitem = items.next();
+                    }
+                    System.out.println(oitem);
+                    int AAR;
                     if (source != event.getSource().getDirectEntity()) {
-                        AAR =  Configs.Config_DamageRadiusO.get();
+                        AAR = Configs.Config_DamageRadiusO.get();
+                        if (oitem.getItem() == Items.AIR) {
+                            AAR += Configs.Config_DamageRadiusOffHandO.get();
+                        }
+                    }else {
+                        AAR = Configs.Config_DamageRadius.get();
+                        if (!oitem.getAttributeModifiers(EquipmentSlot.MAINHAND).get(Attributes.ATTACK_SPEED).isEmpty()){
+                            if (!oitem.getAttributeModifiers(EquipmentSlot.MAINHAND).get(Attributes.ATTACK_DAMAGE).isEmpty()){
+                                AAR += Configs.Config_DamageRadiusOffHand.get();
+                            }
+                        }
                     }
                     double x = source.getX() - mob.getX();
                     double y = source.getY() - mob.getY();

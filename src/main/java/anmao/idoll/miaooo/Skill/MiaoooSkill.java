@@ -28,7 +28,7 @@ public class MiaoooSkill {
             "SkillRepel",
             "SkillChaos"
     };
-    private static final int SkillNumber = 10;
+    private static final int SkillNumber = SkillList.length;
 
     private static final MobEffectInstance ForceField = new MobEffectInstance(MobEffects.LEVITATION,99999,5);
 
