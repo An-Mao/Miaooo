@@ -4,7 +4,7 @@ import net.minecraft.nbt.CompoundTag;
 
 public class TimeIsLife {
     //private final int Time_Min = 200;
-    //private final int Time_Max = 400;
+    private final int Time_Max = 1000000000;
     private int Time = 0;
 
     public int getTime() {
@@ -12,20 +12,23 @@ public class TimeIsLife {
     }
 
     public void addTime(){
-        this.Time++;
+        this.Time = Math.min(Time + 1,Time_Max);
     }
     public void resetTime(){
         this.Time = 0;
     }
     public void copyFrom(TimeIsLife source){
-        this.Time = source.Time;
+        this.Time = 0;
     }
     public void saveNBTData(CompoundTag nbt)
     {
-        nbt.putInt("TimeIsLife",Time);
+
+        nbt.putInt("TimeIsLife",0);
     }
     public void loadNBTData(CompoundTag nbt)
     {
-        Time = nbt.getInt("TimeIsLife");
+
+        //Time = nbt.getInt("TimeIsLife");
+        Time = 0;
     }
 }

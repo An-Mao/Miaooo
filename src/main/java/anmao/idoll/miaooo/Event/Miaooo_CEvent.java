@@ -1,8 +1,10 @@
 package anmao.idoll.miaooo.Event;
 
+import anmao.idoll.miaooo.Config.Configs;
 import anmao.idoll.miaooo.Miaooo;
 import anmao.idoll.miaooo.Net.Messages;
 import anmao.idoll.miaooo.Net.SendToServer.TimeIsLifeS;
+import net.minecraft.client.Minecraft;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -15,6 +17,13 @@ public class Miaooo_CEvent {
         @SubscribeEvent
         public static void onKeyInput(InputEvent event){
             //Messages.sendToServer(new TimeIsLifeS());
+            if (Minecraft.getInstance().player != null) {
+                if(Minecraft.getInstance().player.isAlive()){
+                    if (Configs.Config_TimeMin.get() != 0.0d) {
+                        Messages.sendToServer(new TimeIsLifeS());
+                    }
+                }
+            }
         }
     }
     // You can use EventBusSubscriber to automatically register all static methods in the class annotated with @SubscribeEvent

@@ -8,7 +8,10 @@ import anmao.idoll.miaooo.Capability.TimeIsLifePro;
 import anmao.idoll.miaooo.Config.Configs;
 import anmao.idoll.miaooo.Dat.Dat_;
 import anmao.idoll.miaooo.Miaooo;
+import anmao.idoll.miaooo.Net.Messages;
+import anmao.idoll.miaooo.Net.SendToClient.TimeIsLifeC;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
@@ -20,9 +23,9 @@ import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.common.capabilities.RegisterCapabilitiesEvent;
 import net.minecraftforge.event.AttachCapabilitiesEvent;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.EntityJoinLevelEvent;
 import net.minecraftforge.event.entity.living.LivingAttackEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
@@ -30,6 +33,7 @@ import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.living.LivingSpawnEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.LogicalSide;
 import net.minecraftforge.fml.common.Mod;
 
 import java.util.Iterator;
@@ -67,6 +71,24 @@ public class Miaooo_Events {
             }
         }
         @SubscribeEvent
+        public static void onPlayerTick(TickEvent.PlayerTickEvent event)
+        {
+            if (event.side == LogicalSide.SERVER) {
+                if (event.player instanceof ServerPlayer serverPlayer) {
+                    if (Configs.Config_TimeMin.get() != 0.0d) {
+                        serverPlayer.getCapability(TimeIsLifePro.PLAYER_Time).ifPresent(playerTime -> {
+                            playerTime.addTime();
+                            if (playerTime.getTime() > Configs.Config_TimeMin.get()) {
+                                serverPlayer.hurt(DamageSource.OUT_OF_WORLD, Configs.Config_TimeDamage.get().floatValue());
+                            }
+                            Messages.sendToPlayer(new TimeIsLifeC(playerTime.getTime()), serverPlayer);
+
+                        });
+                    }
+                }
+            }
+        }
+        @SubscribeEvent
         public static void onSpawned(LivingSpawnEvent.AllowDespawn event){
             //
         }
@@ -86,7 +108,7 @@ public class Miaooo_Events {
                 //heal monster
                 List<Entity> entities = GetS.GetEntityRadiusEntities(monster, Configs.Config_HealRadius.get());
                 if (entities.size() > 1) {
-                    float heal_health = (float) (monster.getMaxHealth() * Configs.Config_HealScale.get());
+                    float heal_health = monster.getMaxHealth() * Configs.Config_HealScale.get().floatValue();
                     for (Entity i : entities) {
                         if (i instanceof LivingEntity living) {
                             living.heal(heal_health);
@@ -149,11 +171,11 @@ public class Miaooo_Events {
                     if (monster.getTags().contains(Dat_.Tags_MonsterSon)) {
                         List<Entity> fathers = GetS.GetEntityRadiusEntitiesWithTag(monster, Configs.Config_MonsterSonRadius.get(), Dat_.Tags_MonsterFather);
                         if (!fathers.isEmpty()) {
-                            double sc = Configs.Config_MonsterSonDamageScale.get();
-                            if (sc == 0.0d) {
+                            float sc = Configs.Config_MonsterSonDamageScale.get().floatValue();
+                            if (sc == 0.0f) {
                                 event.setCanceled(true);
                             }else {
-                                event.setAmount((float) (event.getAmount() * sc));
+                                event.setAmount(event.getAmount() * sc);
                             }
                             return;
                         }
@@ -164,15 +186,15 @@ public class Miaooo_Events {
             if (event.getEntity() instanceof Mob mob) {
                 //
                 if (event.getAmount() > Configs.Config_MinDamage.get()) {
-                    double damage;
+                    float damage;
                     if (event.getSource() == DamageSource.OUT_OF_WORLD) {
-                        damage = Configs.Config_MaxDamageWithHealthOut.get();
+                        damage = Configs.Config_MaxDamageWithHealthOut.get().floatValue();
                     }else {
-                        damage = Configs.Config_MaxDamageWithHealth.get();
+                        damage = Configs.Config_MaxDamageWithHealth.get().floatValue();
                     }
                     damage = mob.getMaxHealth() * damage;
                     if (event.getAmount() > damage) {
-                        event.setAmount((float) damage);
+                        event.setAmount(damage);
                         mob.addTag(Dat_.Tags_DamageSafe);
                     }
                 }
