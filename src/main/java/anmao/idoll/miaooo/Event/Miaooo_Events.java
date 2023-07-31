@@ -3,9 +3,12 @@ package anmao.idoll.miaooo.Event;
 import anmao.idoll.miaooo.ApiFcn.GetS;
 import anmao.idoll.miaooo.ApiFcn.IsS;
 import anmao.idoll.miaooo.ApiFcn.SetS;
+import anmao.idoll.miaooo.Capability.TimeIsLife;
+import anmao.idoll.miaooo.Capability.TimeIsLifePro;
 import anmao.idoll.miaooo.Config.Configs;
 import anmao.idoll.miaooo.Dat.Dat_;
 import anmao.idoll.miaooo.Miaooo;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
@@ -14,13 +17,18 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraftforge.client.event.InputEvent;
+import net.minecraftforge.common.capabilities.RegisterCapabilitiesEvent;
+import net.minecraftforge.event.AttachCapabilitiesEvent;
 import net.minecraftforge.event.entity.EntityJoinLevelEvent;
 import net.minecraftforge.event.entity.living.LivingAttackEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.living.LivingSpawnEvent;
+import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
@@ -30,7 +38,34 @@ import java.util.List;
 public class Miaooo_Events {
     @Mod.EventBusSubscriber(modid = Miaooo.MOD_ID)
     public static class ForgeEvents{
-
+        @SubscribeEvent
+        public static void onPlayerCloned(PlayerEvent.Clone event)
+        {
+            if (event.isWasDeath())
+            {
+                event.getOriginal().getCapability(TimeIsLifePro.PLAYER_Time).ifPresent(oldStore -> {
+                    event.getOriginal().getCapability(TimeIsLifePro.PLAYER_Time).ifPresent(newStore ->{
+                        newStore.copyFrom(oldStore);
+                    });
+                });
+            }
+        }
+        @SubscribeEvent
+        public static void onRegisterCapabilities(RegisterCapabilitiesEvent event)
+        {
+            event.register(TimeIsLife.class);
+        }
+        @SubscribeEvent
+        public static void onAttachCapabilitiesPlayer(AttachCapabilitiesEvent<Entity> event)
+        {
+            if (event.getObject() instanceof Player)
+            {
+                if (!event.getObject().getCapability(TimeIsLifePro.PLAYER_Time).isPresent())
+                {
+                    event.addCapability(new ResourceLocation(Miaooo.MOD_ID,"properties"),new TimeIsLifePro());
+                }
+            }
+        }
         @SubscribeEvent
         public static void onSpawned(LivingSpawnEvent.AllowDespawn event){
             //
@@ -114,8 +149,12 @@ public class Miaooo_Events {
                     if (monster.getTags().contains(Dat_.Tags_MonsterSon)) {
                         List<Entity> fathers = GetS.GetEntityRadiusEntitiesWithTag(monster, Configs.Config_MonsterSonRadius.get(), Dat_.Tags_MonsterFather);
                         if (!fathers.isEmpty()) {
-                            event.setAmount((float) (event.getAmount() * Configs.Config_MonsterSonDamageScale.get()));
-                            //event.setCanceled(true);
+                            double sc = Configs.Config_MonsterSonDamageScale.get();
+                            if (sc == 0.0d) {
+                                event.setCanceled(true);
+                            }else {
+                                event.setAmount((float) (event.getAmount() * sc));
+                            }
                             return;
                         }
                     }
@@ -125,8 +164,10 @@ public class Miaooo_Events {
             if (event.getEntity() instanceof Mob mob) {
                 //
                 if (event.getAmount() > Configs.Config_MinDamage.get()) {
-                    double damage = Configs.Config_MaxDamageWithHealth.get();
+                    double damage;
                     if (event.getSource() == DamageSource.OUT_OF_WORLD) {
+                        damage = Configs.Config_MaxDamageWithHealthOut.get();
+                    }else {
                         damage = Configs.Config_MaxDamageWithHealth.get();
                     }
                     damage = mob.getMaxHealth() * damage;
@@ -164,7 +205,7 @@ public class Miaooo_Events {
                     if (source != event.getSource().getDirectEntity()) {
                         AAR = Configs.Config_DamageRadiusO.get();
                         if (oitem.getItem() == Items.AIR) {
-                            AAR += Configs.Config_DamageRadiusOffHandO.get();
+                            AAR -= Configs.Config_DamageRadiusOffHandO.get();
                         }
                     }else {
                         AAR = Configs.Config_DamageRadius.get();
@@ -177,7 +218,11 @@ public class Miaooo_Events {
                     double x = source.getX() - mob.getX();
                     double y = source.getY() - mob.getY();
                     double z = source.getZ() - mob.getZ();
-                    if (x * x + y * y + z * z > AAR) {
+                    //if (x * x + y * y + z * z > AAR) {
+                    //    event.setCanceled(true);
+                    //}
+
+                    if ( x < -AAR || x > AAR || y < -AAR || y > AAR || z < -AAR || z > AAR){
                         event.setCanceled(true);
                     }
                 }
