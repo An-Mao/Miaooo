@@ -1,8 +1,13 @@
 package anmao.idoll.miaooo;
 
 import anmao.idoll.miaooo.Config.Configs;
+import anmao.idoll.miaooo.Item.MiaoooItems;
 import anmao.idoll.miaooo.Net.Messages;
 import com.mojang.logging.LogUtils;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.ItemTags;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.item.Item;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -23,6 +28,11 @@ public class Miaooo
     public static final String MOD_ID = "miaooo";
     // Directly reference a slf4j logger
     private static final Logger LOGGER = LogUtils.getLogger();
+    public static final TagKey<Item> SanAddOne = ItemTags.create(new ResourceLocation(Miaooo.MOD_ID,"sanaddone"));
+    public static final TagKey<Item> SanAddTwo = ItemTags.create(new ResourceLocation(Miaooo.MOD_ID,"sanaddtwo"));
+    public static final TagKey<Item> SanAddThree = ItemTags.create(new ResourceLocation(Miaooo.MOD_ID,"sanaddthree"));
+    public static final TagKey<Item> SanSubOne = ItemTags.create(new ResourceLocation(Miaooo.MOD_ID,"sansubone"));
+    public static final TagKey<Item> SanSubTwo = ItemTags.create(new ResourceLocation(Miaooo.MOD_ID,"sansubtwo"));
 
 
 
@@ -30,6 +40,8 @@ public class Miaooo
     public Miaooo()
     {
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
+
+        MiaoooItems.register(modEventBus);
 
         // Register the commonSetup method for modloading
         modEventBus.addListener(this::commonSetup);

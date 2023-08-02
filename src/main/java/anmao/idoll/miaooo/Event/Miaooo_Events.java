@@ -3,6 +3,11 @@ package anmao.idoll.miaooo.Event;
 import anmao.idoll.miaooo.ApiFcn.GetS;
 import anmao.idoll.miaooo.ApiFcn.IsS;
 import anmao.idoll.miaooo.ApiFcn.SetS;
+import anmao.idoll.miaooo.Capability.San.Net.SanNTC;
+import anmao.idoll.miaooo.Capability.San.San;
+import anmao.idoll.miaooo.Capability.San.SanF;
+import anmao.idoll.miaooo.Capability.San.SanPro;
+import anmao.idoll.miaooo.Capability.San.SanTags;
 import anmao.idoll.miaooo.Capability.TimeIsLife;
 import anmao.idoll.miaooo.Capability.TimeIsLifePro;
 import anmao.idoll.miaooo.Config.Configs;
@@ -14,23 +19,18 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.Level;
 import net.minecraftforge.common.capabilities.RegisterCapabilitiesEvent;
 import net.minecraftforge.event.AttachCapabilitiesEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.EntityJoinLevelEvent;
-import net.minecraftforge.event.entity.living.LivingAttackEvent;
-import net.minecraftforge.event.entity.living.LivingDeathEvent;
-import net.minecraftforge.event.entity.living.LivingHurtEvent;
-import net.minecraftforge.event.entity.living.LivingSpawnEvent;
+import net.minecraftforge.event.entity.living.*;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.LogicalSide;
@@ -52,12 +52,19 @@ public class Miaooo_Events {
                         newStore.copyFrom(oldStore);
                     });
                 });
+                event.getOriginal().getCapability(SanPro.PLAYER_SAN).ifPresent(oldStore -> {
+                    event.getOriginal().getCapability(SanPro.PLAYER_SAN).ifPresent(newStore ->{
+                        newStore.copyFrom(oldStore);
+                    });
+                });
             }
         }
         @SubscribeEvent
         public static void onRegisterCapabilities(RegisterCapabilitiesEvent event)
         {
+
             event.register(TimeIsLife.class);
+            event.register(San.class);
         }
         @SubscribeEvent
         public static void onAttachCapabilitiesPlayer(AttachCapabilitiesEvent<Entity> event)
@@ -66,7 +73,11 @@ public class Miaooo_Events {
             {
                 if (!event.getObject().getCapability(TimeIsLifePro.PLAYER_Time).isPresent())
                 {
-                    event.addCapability(new ResourceLocation(Miaooo.MOD_ID,"properties"),new TimeIsLifePro());
+                    event.addCapability(new ResourceLocation(Miaooo.MOD_ID,"timeislife"),new TimeIsLifePro());
+                }
+                if (!event.getObject().getCapability(SanPro.PLAYER_SAN).isPresent())
+                {
+                    event.addCapability(new ResourceLocation(Miaooo.MOD_ID,"san"),new SanPro());
                 }
             }
         }
@@ -82,9 +93,16 @@ public class Miaooo_Events {
                                 serverPlayer.hurt(DamageSource.OUT_OF_WORLD, Configs.Config_TimeDamage.get().floatValue());
                             }
                             Messages.sendToPlayer(new TimeIsLifeC(playerTime.getTime()), serverPlayer);
-
                         });
                     }
+                    serverPlayer.getCapability(SanPro.PLAYER_SAN).ifPresent(playerSan -> {
+                        if (SanF.SanDeath(serverPlayer, playerSan.getSan()) && serverPlayer.getRandom().nextFloat() < 0.005f) {
+                            if (serverPlayer.getLevel().dimension() == Level.NETHER) {
+                                playerSan.subSan(1);
+                            }
+                            Messages.sendToPlayer(new SanNTC(playerSan.getSan()), serverPlayer);
+                        }
+                    });
                 }
             }
         }
@@ -115,50 +133,86 @@ public class Miaooo_Events {
                         }
                     }
                 }
+            }else if (event.getEntity() instanceof Player dplayer)
+            {
+                dplayer.getCapability(SanPro.PLAYER_SAN).ifPresent(playerSan -> {
+                    playerSan.addSan(100);
+                    Messages.sendToPlayer(new SanNTC(playerSan.getSan()),(ServerPlayer) dplayer);
+                });
+            }
+
+
+            if (event.getSource().getEntity() instanceof ServerPlayer player)
+            {
+                player.getCapability(SanPro.PLAYER_SAN).ifPresent(playerSan -> {
+                    if (event.getEntity() instanceof Monster)
+                    {
+                        playerSan.addSan(1);
+                        Messages.sendToPlayer(new SanNTC(playerSan.getSan()), player);
+                    }else {
+                        if (SanF.SanDeath(player, playerSan.getSan())) {
+                            if (event.getEntity().getType() == EntityType.VILLAGER || event.getEntity().getType() == EntityType.PLAYER) {
+                                playerSan.subSan(3);
+                                Messages.sendToPlayer(new SanNTC(playerSan.getSan()), player);
+                            } else {
+                                playerSan.subSan(1);
+                                Messages.sendToPlayer(new SanNTC(playerSan.getSan()), player);
+                            }
+                        }
+                    }
+
+                });
             }
         }
         @SubscribeEvent
         public static void onJoinLevel(EntityJoinLevelEvent event){
             //------------------------------------------------
+            if (!event.getLevel().isClientSide()) {
+                if (event.getEntity() instanceof ServerPlayer player) {
+                    player.getCapability(SanPro.PLAYER_SAN).ifPresent(playerSan -> {
+                        Messages.sendToPlayer(new SanNTC(playerSan.getSan()), player);
+                    });
+                }
 
 
-            //------------------------------------------------
-            if (event.getEntity() instanceof Mob mob){
-                if(!mob.getTags().contains(Dat_.Tags_ChanceDrop)) {
-                    float a = Configs.Config_BanItemDrop.get().floatValue();
-                    if( a >= 0.0f) {
-                        mob.addTag(Dat_.Tags_ChanceDrop);
-                        mob.setDropChance(EquipmentSlot.CHEST, a);
-                        mob.setDropChance(EquipmentSlot.FEET, a);
-                        mob.setDropChance(EquipmentSlot.HEAD, a);
-                        mob.setDropChance(EquipmentSlot.LEGS, a);
-                        mob.setDropChance(EquipmentSlot.MAINHAND, a);
-                        mob.setDropChance(EquipmentSlot.OFFHAND, a);
+                //------------------------------------------------
+                if (event.getEntity() instanceof Mob mob) {
+                    if (!mob.getTags().contains(Dat_.Tags_ChanceDrop)) {
+                        float a = Configs.Config_BanItemDrop.get().floatValue();
+                        if (a >= 0.0f) {
+                            mob.addTag(Dat_.Tags_ChanceDrop);
+                            mob.setDropChance(EquipmentSlot.CHEST, a);
+                            mob.setDropChance(EquipmentSlot.FEET, a);
+                            mob.setDropChance(EquipmentSlot.HEAD, a);
+                            mob.setDropChance(EquipmentSlot.LEGS, a);
+                            mob.setDropChance(EquipmentSlot.MAINHAND, a);
+                            mob.setDropChance(EquipmentSlot.OFFHAND, a);
+                        }
                     }
                 }
-            }
 
-            //add father spawn
-            if (event.getEntity() instanceof Monster monster){
+                //add father spawn
+                if (event.getEntity() instanceof Monster monster) {
 
-                if (IsS.IsSpawnBigMonster()) {
-                    List<Entity> entities = GetS.GetEntityRadiusEntities(monster, Configs.Config_MonsterFatherRadius.get());
-                    if (entities.size() > 1) {
-                        float health = monster.getMaxHealth();
-                        double atk = GetS.GetEntityAttribute(monster,Attributes.ATTACK_DAMAGE);
-                        for (Entity i : entities) {
-                            if (i instanceof LivingEntity living) {
-                                health = health + living.getMaxHealth();
-                                atk = atk + GetS.GetEntityAttribute(living, Attributes.ATTACK_DAMAGE);
-                                living.addTag(Dat_.Tags_MonsterSon);
+                    if (IsS.IsSpawnBigMonster()) {
+                        List<Entity> entities = GetS.GetEntityRadiusEntities(monster, Configs.Config_MonsterFatherRadius.get());
+                        if (entities.size() > 1) {
+                            float health = monster.getMaxHealth();
+                            double atk = GetS.GetEntityAttribute(monster, Attributes.ATTACK_DAMAGE);
+                            for (Entity i : entities) {
+                                if (i instanceof LivingEntity living) {
+                                    health = health + living.getMaxHealth();
+                                    atk = atk + GetS.GetEntityAttribute(living, Attributes.ATTACK_DAMAGE);
+                                    living.addTag(Dat_.Tags_MonsterSon);
+                                }
                             }
+                            SetS.SetMonsterEffect(monster, MobEffects.DAMAGE_BOOST, 999999, entities.size());
+                            SetS.SetMonsterEffect(monster, MobEffects.GLOWING, 999999, entities.size());
+                            SetS.SetMonsterMaxHealth(monster, health);
+                            SetS.SetMonsterMaxAttackDamage(monster, atk);
+                            monster.addTag(Dat_.Tags_MonsterFather);
+                            monster.heal(health);
                         }
-                        SetS.SetMonsterEffect(monster,MobEffects.DAMAGE_BOOST,999999,entities.size());
-                        SetS.SetMonsterEffect(monster,MobEffects.GLOWING,999999,entities.size());
-                        SetS.SetMonsterMaxHealth(monster,health);
-                        SetS.SetMonsterMaxAttackDamage(monster,atk);
-                        monster.addTag(Dat_.Tags_MonsterFather);
-                        monster.heal(health);
                     }
                 }
             }
@@ -248,6 +302,42 @@ public class Miaooo_Events {
                         event.setCanceled(true);
                     }
                 }
+            }
+        }
+        @SubscribeEvent
+        public static void onDamage(LivingDamageEvent event){
+            if (event.getSource().getEntity() instanceof ServerPlayer player)
+            {
+                player.getCapability(SanPro.PLAYER_SAN).ifPresent(playerSan -> {
+                    int _san =playerSan.getSan();
+                    if (_san <50 && SanF.SanDeath(player, _san))
+                    {
+                        float damage_self = Math.max(player.getMaxHealth()*0.04f,1.0f);
+                        player.hurt(DamageSource.OUT_OF_WORLD,damage_self);
+                        playerSan.subSan(1);
+                        event.setAmount(event.getAmount()*(2-_san*0.01f));
+                    }
+                    Messages.sendToPlayer(new SanNTC(playerSan.getSan()), player);
+                });
+            }
+        }
+        @SubscribeEvent
+        public static void onUseItemFinish(LivingEntityUseItemEvent.Finish event) {
+            if (event.getEntity() instanceof ServerPlayer player) {
+                player.getCapability(SanPro.PLAYER_SAN).ifPresent(playerSan -> {
+                    if (SanF.SanDeath(player, playerSan.getSan())) {
+                        SanTags sanTags = new SanTags();
+                        if (sanTags.isSanTags(event.getItem())){
+                            if (sanTags.getType() == SanTags.TYPE_ADD){
+                                playerSan.addSan(sanTags.getNumbers());
+                            }
+                            if (sanTags.getType() == SanTags.TYPE_SUB){
+                                playerSan.subSan(sanTags.getNumbers());
+                            }
+                        }
+                        Messages.sendToPlayer(new SanNTC(playerSan.getSan()), player);
+                    }
+                });
             }
         }
     }

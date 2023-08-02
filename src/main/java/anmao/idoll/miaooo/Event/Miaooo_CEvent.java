@@ -1,5 +1,6 @@
 package anmao.idoll.miaooo.Event;
 
+import anmao.idoll.miaooo.Capability.San.Client.SanHud;
 import anmao.idoll.miaooo.Config.Configs;
 import anmao.idoll.miaooo.Miaooo;
 import anmao.idoll.miaooo.Net.Messages;
@@ -7,6 +8,7 @@ import anmao.idoll.miaooo.Net.SendToServer.TimeIsLifeS;
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.InputEvent;
+import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
@@ -34,6 +36,10 @@ public class Miaooo_CEvent {
         public static void onClientSetup(FMLClientSetupEvent event)
         {
             // Some client setup code
+        }
+        @SubscribeEvent
+        public static void registerGuiOverlays(RegisterGuiOverlaysEvent event){
+            event.registerAboveAll("san", SanHud.SAN_HUD);
         }
     }
 }

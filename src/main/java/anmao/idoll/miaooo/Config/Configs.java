@@ -28,6 +28,14 @@ public class Configs {
     public static ForgeConfigSpec.DoubleValue Config_TimeDamage;
     public static ForgeConfigSpec.IntValue Config_TimeMin;
 
+    public static ForgeConfigSpec.IntValue Config_SanMax;
+    public static ForgeConfigSpec.IntValue Config_SanMin;
+    public static ForgeConfigSpec.IntValue Config_SanLow;
+    public static ForgeConfigSpec.IntValue Config_SanLowA;
+    public static ForgeConfigSpec.IntValue Config_SanLowB;
+    public static ForgeConfigSpec.IntValue Config_SanLowC;
+    public static ForgeConfigSpec.IntValue Config_SanLowD;
+
 
     private static void setupConfig(ForgeConfigSpec.Builder builder) {
         builder.comment("===============================================");
@@ -87,6 +95,17 @@ public class Configs {
         builder.push("Time Is Life");
         Config_TimeMin= builder.comment("Time Min (0:disable)（最小时间）[0 - 1000][default:3600]").defineInRange("TimeMin", 3600, 0, 1000000000);
         Config_TimeDamage = builder.comment("Time Damage（每次伤害）[0.0 - 1.0][default:1.0]").defineInRange("TimeDamage", 1.0, 0.0, 1000000000.0);
+        builder.pop();
+
+        builder.comment("理性");
+        builder.push("San");
+        Config_SanMin= builder.comment("San Min（最小）[0 - 999][default:3600]").defineInRange("SanMin", 0, 0, 999);
+        Config_SanMax = builder.comment("San Max (0:disable)（最大）[0 - 999][default:300]").defineInRange("SanMax", 300, 0, 999);
+        Config_SanLow = builder.comment("San Low (effect lvl:1) [0 - 999][default:300]").defineInRange("SanLow", 200, 0, 999);
+        Config_SanLowA = builder.comment("San LowA (effect lvl:2) [0 - 999][default:300]").defineInRange("SanLowA", 150, 0, 999);
+        Config_SanLowB = builder.comment("San LowB (effect lvl:3) [0 - 999][default:300]").defineInRange("SanLowB", 100, 0, 999);
+        Config_SanLowC = builder.comment("San LowC (effect lvl:4) [0 - 999][default:300]").defineInRange("SanLowC", 50, 0, 999);
+        Config_SanLowD = builder.comment("San LowD (Player Death) [0 - 999][default:300]").defineInRange("SanLowD", 0, 0, 999);
         builder.pop();
     }
 }

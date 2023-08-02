@@ -1,3 +1,8 @@
 {
-  "massage.miaooo.reset_time":"reset time"
+  "itemGroup.cater": "Miaooo",
+  "item.miaooo.darkness_pocket_watch": "Darkness Pocket Watch",
+
+  "massage.miaooo.reset_time":"reset time",
+  "massage.miaooo.add_san":"add san",
+  "massage.miaooo.disable_san": "San Is Disable"
 }

@@ -1,5 +1,7 @@
 package anmao.idoll.miaooo.Net;
 
+import anmao.idoll.miaooo.Capability.San.Net.SanNTC;
+import anmao.idoll.miaooo.Capability.San.Net.SanNTS;
 import anmao.idoll.miaooo.Miaooo;
 import anmao.idoll.miaooo.Net.SendToClient.TimeIsLifeC;
 import anmao.idoll.miaooo.Net.SendToServer.TimeIsLifeS;
@@ -27,6 +29,14 @@ public class Messages {
                 .decoder(TimeIsLifeC::new)
                 .encoder(TimeIsLifeC::toBytes)
                 .consumerMainThread(TimeIsLifeC::handle).add();
+        net.messageBuilder(SanNTS.class,id(), NetworkDirection.PLAY_TO_SERVER)
+                .decoder(SanNTS::new)
+                .encoder(SanNTS::toBytes)
+                .consumerMainThread(SanNTS::handle).add();
+        net.messageBuilder(SanNTC.class,id(), NetworkDirection.PLAY_TO_CLIENT)
+                .decoder(SanNTC::new)
+                .encoder(SanNTC::toBytes)
+                .consumerMainThread(SanNTC::handle).add();
     }
     public static <MSG> void sendToServer(MSG msg){
         INSTANCE.sendToServer(msg);
